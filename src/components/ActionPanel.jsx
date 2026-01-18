@@ -28,13 +28,13 @@ function ActionPanel() {
   const [nextWidget, setNextWidget] = useState(null);
 
   const directLineMeasure = document.querySelector(
-    "arcgis-direct-line-measurement-3d"
+    "arcgis-direct-line-measurement-3d",
   );
 
   useEffect(() => {
     if (activeWidget) {
       const actionActiveWidget = document.querySelector(
-        `[data-panel-id=${activeWidget}]`
+        `[data-panel-id=${activeWidget}]`,
       );
       actionActiveWidget.hidden = true;
       directLineMeasure
@@ -44,7 +44,7 @@ function ActionPanel() {
 
     if (nextWidget !== activeWidget) {
       const actionNextWidget = document.querySelector(
-        `[data-panel-id=${nextWidget}]`
+        `[data-panel-id=${nextWidget}]`,
       );
       actionNextWidget.hidden = false;
     }
@@ -58,10 +58,10 @@ function ActionPanel() {
         position="start"
         id="left-shell-panel"
         displayMode="dock"
-        // style={{
-        //   borderStyle: "solid",
-        //   borderLeftWidth: 1,
-        // }}
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#888 #555",
+        }}
       >
         <CalciteActionBar
           slot="action-bar"

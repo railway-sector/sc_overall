@@ -697,7 +697,7 @@ const uniqueValueInfosLotStatus = lotStatusLabel.map(
         color: lotStatusColor[index],
       }),
     });
-  }
+  },
 );
 const lotLayerRenderer = new UniqueValueRenderer({
   field: lotStatusField,
@@ -889,11 +889,11 @@ export const accessibleLotAreaLayer = new FeatureLayer({
 /* Optmized lots for NSCR-Ex Passenger Line */
 const optimizedLotRenderer = new SimpleRenderer({
   symbol: new SimpleFillSymbol({
-    color: "#808080",
+    color: "#bbbbbb",
     style: "diagonal-cross",
     outline: {
       // autocasts as new SimpleLineSymbol()
-      color: "#bbbbbb",
+      color: "#FF5733", // [0, 255, 255, 1],
       width: "6px",
     },
   }),
@@ -907,11 +907,11 @@ export const optimizedLots_passengerLineLayer = new FeatureLayer({
     },
   },
   layerId: 1,
-  definitionExpression: "OptLotsIIA = 1",
+  definitionExpression: "OptLotsIIA_NoT = 1",
   labelingInfo: [lotIdLabel],
   renderer: optimizedLotRenderer,
   popupTemplate: templateLot,
-  title: "Optimized Lots for NSCR-Ex Passenger & Freight Line",
+  title: "Optimized Lots with Issued Notice of Taking",
   minScale: 150000,
   maxScale: 0,
   //labelsVisible: false,
@@ -927,7 +927,7 @@ const studiedLotRenderer = new SimpleRenderer({
     style: "horizontal",
     outline: {
       // autocasts as new SimpleLineSymbol()
-      color: "#DF73FF", //[110, 110, 110],
+      color: "#808080", //#DF73FF,
       width: "6px",
     },
   }),
@@ -993,7 +993,7 @@ const structureRendererUniqueValueInfos = statusStructureLabel.map(
       }),
       label: status,
     });
-  }
+  },
 );
 
 const structureRenderer = new UniqueValueRenderer({
@@ -1249,7 +1249,7 @@ const uniqueValueInfosStrucOwnership = structureOwnershipStatusLabel.map(
         },
       }),
     });
-  }
+  },
 );
 const structureOwnershipRenderer = new UniqueValueRenderer({
   field: structureOwnershipStatusField,
@@ -1311,7 +1311,7 @@ const uniqueValueInfosOccupancy = structureOccupancyStatusLabel.map(
         },
       }),
     });
-  }
+  },
 );
 
 const occupancyRenderer = new UniqueValueRenderer({
@@ -1644,7 +1644,7 @@ export const pierAccessLayer = new FeatureLayer(
     elevationInfo: {
       mode: "on-the-ground",
     },
-  }
+  },
   //{ utcOffset: 300 },
 );
 
@@ -2166,7 +2166,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Demolished.png",
         "#D13470",
-        20
+        20,
       ),
     },
     {
@@ -2175,7 +2175,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/DemolishComplete_v2.png",
         "#D13470",
-        25
+        25,
       ),
     },
     {
@@ -2184,7 +2184,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Relocatd.png",
         "#D13470",
-        30
+        30,
       ),
     },
     {
@@ -2193,7 +2193,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Utility_Relocated_Completed_Symbol.png",
         "#D13470",
-        30
+        30,
       ),
     },
     {
@@ -2202,7 +2202,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/NewlyAdded.png",
         "#D13470",
-        35
+        35,
       ),
     },
     {
@@ -2211,7 +2211,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/NewlyAdded_Completed.png",
         "#D13470",
-        35
+        35,
       ),
     },
     {
@@ -2220,7 +2220,7 @@ const utilityStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Unknown_v2.png",
         "#D13470",
-        35
+        35,
       ),
     },
   ],
@@ -2321,7 +2321,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Demolished.png",
         "#D13470",
-        20
+        20,
       ),
     },
     {
@@ -2330,7 +2330,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/DemolishComplete_v2.png",
         "#D13470",
-        25
+        25,
       ),
     },
     {
@@ -2339,7 +2339,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Relocatd.png",
         "#D13470",
-        30
+        30,
       ),
     },
     {
@@ -2348,7 +2348,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Utility_Relocated_Completed_Symbol.png",
         "#D13470",
-        30
+        30,
       ),
     },
     {
@@ -2357,7 +2357,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/NewlyAdded.png",
         "#D13470",
-        35
+        35,
       ),
     },
     {
@@ -2366,7 +2366,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/NewlyAdded_Completed.png",
         "#D13470",
-        35
+        35,
       ),
     },
     {
@@ -2375,7 +2375,7 @@ const utilLineStatusRenderer = new UniqueValueRenderer({
       symbol: getUniqueValueSymbol(
         "https://EijiGorilla.github.io/Symbols/Unknown_v2.png",
         "#D13470",
-        35
+        35,
       ),
     },
   ],
@@ -2459,7 +2459,7 @@ function lineSizeShapeSymbolLayers(
   width: number,
   height: number,
   profileRotation: "heading" | "all" | undefined,
-  property: number
+  property: number,
 ) {
   return new LineSymbol3D({
     symbolLayers: [
@@ -2494,7 +2494,7 @@ function renderutilityLineLayer() {
         0.5,
         0.5,
         "all",
-        i - 1
+        i - 1,
       ),
     });
   }
