@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import {
   colorsCompen,
   colorsCutting,
@@ -16,6 +17,9 @@ import {
 import StatisticDefinition from "@arcgis/core/rest/support/StatisticDefinition";
 import * as am5 from "@amcharts/amcharts5";
 import Query from "@arcgis/core/rest/support/Query";
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+import SceneLayer from "@arcgis/core/layers/SceneLayer";
+import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import {
   cpField,
   lotHandedOverAreaField,
@@ -308,7 +312,7 @@ export async function generateHandedOverAreaData() {
         {
           category: cp,
           value: percent,
-        }
+        },
       );
     });
 
@@ -1502,7 +1506,7 @@ export async function viaductProgressChartData(contractp: any) {
           piearhead: pierheadCount,
           precast: precastCount,
           atgrade: atgradeCount,
-        }
+        },
       );
     });
     return data;
@@ -1618,4 +1622,88 @@ export const defineActions = (event: any) => {
   item.title === "Handed-Over Area"
     ? (item.visible = false)
     : (item.visible = true);
+};
+
+// Highlight selected utility feature in the Chart
+export const highlightSelectedUtil = (
+  featureLayer: any,
+  qExpression: any,
+  view: any,
+) => {
+  const query = featureLayer.createQuery();
+  query.where = qExpression;
+  let highlightSelect: any;
+
+  view?.whenLayerView(featureLayer).then((layerView: any) => {
+    featureLayer?.queryObjectIds(query).then((results: any) => {
+      const objID = results;
+
+      const queryExt = new Query({
+        objectIds: objID,
+      });
+
+      try {
+        featureLayer?.queryExtent(queryExt).then((result: any) => {
+          if (result?.extent) {
+            view?.goTo(result.extent);
+          }
+        });
+      } catch (error) {
+        console.error("Error querying extent for point layer:", error);
+      }
+
+      highlightSelect && highlightSelect.remove();
+      highlightSelect = layerView.highlight(objID);
+    });
+
+    layerView.filter = new FeatureFilter({
+      where: qExpression,
+    });
+
+    // For initial state, we need to add this
+    view?.on("click", () => {
+      layerView.filter = new FeatureFilter({
+        where: undefined,
+      });
+      highlightSelect && highlightSelect.remove();
+    });
+  });
+};
+
+type layerViewQueryProps = {
+  pointLayer1?: FeatureLayer;
+  pointLayer2?: FeatureLayer;
+  lineLayer1?: FeatureLayer;
+  lineLayer2?: FeatureLayer;
+  polygonLayer?: FeatureLayer | SceneLayer;
+  qExpression?: any;
+  view: any;
+};
+
+export const utilPointLayerViewQueryFeatureHighlight = ({
+  pointLayer1,
+  pointLayer2,
+  qExpression,
+  view,
+}: layerViewQueryProps) => {
+  highlightSelectedUtil(pointLayer1, qExpression, view);
+  highlightSelectedUtil(pointLayer2, qExpression, view);
+};
+
+export const utilLineLayerViewQueryFeatureHighlight = ({
+  lineLayer1,
+  lineLayer2,
+  qExpression,
+  view,
+}: layerViewQueryProps) => {
+  highlightSelectedUtil(lineLayer1, qExpression, view);
+  highlightSelectedUtil(lineLayer2, qExpression, view);
+};
+
+export const polygonViewQueryFeatureHighlight = ({
+  polygonLayer,
+  qExpression,
+  view,
+}: layerViewQueryProps) => {
+  highlightSelectedUtil(polygonLayer, qExpression, view);
 };

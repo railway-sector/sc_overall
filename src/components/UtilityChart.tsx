@@ -5,14 +5,10 @@ import {
   utilityPointLayer,
   utilityLineLayer,
 } from "../layers";
-import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
-import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import "@esri/calcite-components/dist/components/calcite-label";
-import { CalciteLabel } from "@esri/calcite-components-react";
 import "../App.css";
 import {
   dateUpdate,
@@ -21,9 +17,10 @@ import {
   generateUtilityPointData,
   thousands_separators,
   utilityTypeChart,
+  utilLineLayerViewQueryFeatureHighlight,
+  utilPointLayerViewQueryFeatureHighlight,
 } from "../Query";
 import {
-  chart_width,
   cutoff_days,
   primaryLabelColor,
   updatedDateCategoryNames,
@@ -159,7 +156,7 @@ const UtilityChart = () => {
         paddingBottom: paddingBottom,
         scale: 1,
         height: am5.percent(100),
-      })
+      }),
     );
     // chartRef.current = chart;
 
@@ -184,7 +181,7 @@ const UtilityChart = () => {
           });
         },
         tooltip: am5.Tooltip.new(root, {}),
-      })
+      }),
     );
 
     yRenderer.labels.template.setAll({
@@ -217,7 +214,7 @@ const UtilityChart = () => {
           strokeWidth: 1,
           stroke: am5.color("#ffffff"),
         }),
-      })
+      }),
     );
 
     xAxis.get("renderer").labels.template.setAll({
@@ -262,7 +259,7 @@ const UtilityChart = () => {
               ? am5.color(chartSeriesFillColorIncomp)
               : am5.color(chartSeriesFillColorComp),
           stroke: am5.color(chartBorderLineColor),
-        })
+        }),
       );
 
       series.columns.template.setAll({
@@ -298,7 +295,7 @@ const UtilityChart = () => {
         const selected: any = ev.target.dataItem?.dataContext;
         const categorySelect: string = selected.category;
         const find = utilityTypeChart.find(
-          (emp: any) => emp.category === categorySelect
+          (emp: any) => emp.category === categorySelect,
         );
         const typeSelect = find?.value;
 
@@ -315,97 +312,15 @@ const UtilityChart = () => {
           " AND " +
           "Status = " +
           selectedStatus;
-        // Define Query
-        const query = utilityPointLayer.createQuery();
-        query.where =
+
+        const qExpression =
           contractpackages === "All" ? defaultExpression : sqlExpression;
-
-        let highlightSelect: any;
-        arcgisScene?.whenLayerView(utilityPointLayer).then((layerView: any) => {
-          utilityPointLayer.queryFeatures(query).then((results: any) => {
-            const lengths = results.features;
-            const rows = lengths.length;
-
-            const objID = [];
-            for (let i = 0; i < rows; i++) {
-              const obj = results.features[i].attributes.OBJECTID;
-              objID.push(obj);
-            }
-
-            const queryExt = new Query({
-              objectIds: objID,
-            });
-
-            utilityPointLayer.queryExtent(queryExt).then((result: any) => {
-              if (result.extent) {
-                arcgisScene?.view.goTo(result.extent);
-              }
-            });
-
-            if (highlightSelect) {
-              highlightSelect.remove();
-            }
-            highlightSelect = layerView.highlight(objID);
-
-            arcgisScene?.view.on("click", () => {
-              layerView.filter = new FeatureFilter({
-                where: undefined,
-              });
-              highlightSelect.remove();
-            });
-          });
-          layerView.filter = new FeatureFilter({
-            where:
-              contractpackages === "All" ? defaultExpression : sqlExpression,
-          });
+        utilPointLayerViewQueryFeatureHighlight({
+          pointLayer1: utilityPointLayer,
+          pointLayer2: utilityPointLayer1,
+          qExpression: qExpression,
+          view: arcgisScene?.view,
         });
-
-        const query1 = utilityPointLayer.createQuery();
-        query1.where =
-          contractpackages === "All" ? defaultExpression : sqlExpression;
-
-        arcgisScene
-          ?.whenLayerView(utilityPointLayer1)
-          .then((layerView: any) => {
-            utilityPointLayer1.queryFeatures(query1).then((results: any) => {
-              const lengths = results.features;
-              const rows = lengths.length;
-
-              const objID = [];
-              for (let i = 0; i < rows; i++) {
-                const obj = results.features[i].attributes.OBJECTID;
-                objID.push(obj);
-              }
-
-              const queryExt = new Query({
-                objectIds: objID,
-              });
-
-              utilityPointLayer1.queryExtent(queryExt).then((result: any) => {
-                if (result.extent) {
-                  arcgisScene?.view.goTo(result.extent);
-                }
-              });
-
-              if (highlightSelect) {
-                highlightSelect.remove();
-              }
-              highlightSelect = layerView.highlight(objID);
-
-              arcgisScene?.view.on("click", () => {
-                layerView.filter = new FeatureFilter({
-                  where: undefined,
-                });
-                highlightSelect.remove();
-              });
-            });
-            layerView.filter = new FeatureFilter({
-              where:
-                contractpackages === "All" ? defaultExpression : sqlExpression,
-            });
-          });
-
-        // Point + Line
       });
 
       // legend.data.push(series);
@@ -449,7 +364,7 @@ const UtilityChart = () => {
         paddingBottom: paddingBottom,
         scale: 1,
         height: am5.percent(100),
-      })
+      }),
     );
     chartRef_line.current = chart;
 
@@ -474,7 +389,7 @@ const UtilityChart = () => {
           });
         },
         tooltip: am5.Tooltip.new(root2, {}),
-      })
+      }),
     );
 
     yRenderer.labels.template.setAll({
@@ -507,7 +422,7 @@ const UtilityChart = () => {
           strokeWidth: 1,
           stroke: am5.color("#ffffff"),
         }),
-      })
+      }),
     );
 
     xAxis.get("renderer").labels.template.setAll({
@@ -552,7 +467,7 @@ const UtilityChart = () => {
               ? am5.color(chartSeriesFillColorIncomp)
               : am5.color(chartSeriesFillColorComp),
           stroke: am5.color(chartBorderLineColor),
-        })
+        }),
       );
 
       series.columns.template.setAll({
@@ -588,7 +503,7 @@ const UtilityChart = () => {
         const selected: any = ev.target.dataItem?.dataContext;
         const categorySelect: string = selected.category;
         const find = utilityTypeChart.find(
-          (emp: any) => emp.category === categorySelect
+          (emp: any) => emp.category === categorySelect,
         );
         const typeSelect = find?.value;
 
@@ -606,93 +521,15 @@ const UtilityChart = () => {
           "Status = " +
           selectedStatus;
         // Define Query
-        const query = utilityLineLayer.createQuery();
-        query.where =
+        const qExpression =
           contractpackages === "All" ? defaultExpression : sqlExpression;
 
-        let highlightSelect: any;
-        arcgisScene?.whenLayerView(utilityLineLayer).then((layerView: any) => {
-          utilityLineLayer.queryFeatures(query).then((results: any) => {
-            const lengths = results.features;
-            const rows = lengths.length;
-
-            const objID = [];
-            for (let i = 0; i < rows; i++) {
-              const obj = results.features[i].attributes.OBJECTID;
-              objID.push(obj);
-            }
-
-            const queryExt = new Query({
-              objectIds: objID,
-            });
-
-            utilityLineLayer.queryExtent(queryExt).then((result: any) => {
-              if (result.extent) {
-                arcgisScene?.view.goTo(result.extent);
-              }
-            });
-
-            if (highlightSelect) {
-              highlightSelect.remove();
-            }
-            highlightSelect = layerView.highlight(objID);
-
-            arcgisScene?.view.on("click", () => {
-              layerView.filter = new FeatureFilter({
-                where: undefined,
-              });
-              highlightSelect.remove();
-            });
-          });
-          layerView.filter = new FeatureFilter({
-            where:
-              contractpackages === "All" ? defaultExpression : sqlExpression,
-          });
+        utilLineLayerViewQueryFeatureHighlight({
+          lineLayer1: utilityLineLayer,
+          lineLayer2: utilityLineLayer1,
+          qExpression: qExpression,
+          view: arcgisScene?.view,
         });
-
-        const query1 = utilityLineLayer.createQuery();
-        query1.where =
-          contractpackages === "All" ? defaultExpression : sqlExpression;
-
-        arcgisScene?.whenLayerView(utilityLineLayer1).then((layerView: any) => {
-          utilityLineLayer1.queryFeatures(query1).then((results: any) => {
-            const lengths = results.features;
-            const rows = lengths.length;
-
-            const objID = [];
-            for (let i = 0; i < rows; i++) {
-              const obj = results.features[i].attributes.OBJECTID;
-              objID.push(obj);
-            }
-
-            const queryExt = new Query({
-              objectIds: objID,
-            });
-
-            utilityLineLayer1.queryExtent(queryExt).then((result: any) => {
-              if (result.extent) {
-                arcgisScene?.view.goTo(result.extent);
-              }
-            });
-
-            if (highlightSelect) {
-              highlightSelect.remove();
-            }
-            highlightSelect = layerView.highlight(objID);
-
-            arcgisScene?.view.on("click", () => {
-              layerView.filter = new FeatureFilter({
-                where: undefined,
-              });
-              highlightSelect.remove();
-            });
-          });
-          layerView.filter = new FeatureFilter({
-            where:
-              contractpackages === "All" ? defaultExpression : sqlExpression,
-          });
-        });
-        // Point + Line
       });
 
       // legend.data.push(series);
@@ -707,45 +544,49 @@ const UtilityChart = () => {
   });
 
   return (
-    <div style={{ width: chart_width }}>
+    <>
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          marginLeft: "13px",
-          marginTop: "10px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        TOTAL PROGRESS
-      </div>
-      <CalciteLabel layout="inline">
-        <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-          <div
+        <img
+          src="https://EijiGorilla.github.io/Symbols/Utility_Logo.png"
+          alt="Land Logo"
+          height={"17%"}
+          width={"17%"}
+          style={{ paddingTop: "3px", paddingLeft: "15px" }}
+        />
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            TOTAL PROGRESS
+          </dt>
+          <dd
             style={{
               color: valueLabelColor,
-              fontSize: "2rem",
+              fontSize: "1.9rem",
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
-              marginLeft: "15px",
+              margin: "auto",
             }}
           >
-            <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-              {thousands_separators(progress[1])} %{" "}
-              <div className="totalLotsNumber2">
-                ({thousands_separators(progress[0])})
-              </div>
-            </b>
-          </div>
-          <img
-            src="https://EijiGorilla.github.io/Symbols/Utility_Logo.png"
-            alt="Land Logo"
-            height={"75px"}
-            width={"75px"}
-            style={{ marginLeft: "260px", display: "flex", marginTop: "-90px" }}
-          />
-        </b>
-      </CalciteLabel>
+            {thousands_separators(progress[1])} %{" "}
+          </dd>
+          <div>({thousands_separators(progress[0])})</div>
+        </dl>
+      </div>
 
       <div
         style={{
@@ -764,11 +605,11 @@ const UtilityChart = () => {
       <div
         id={chartID}
         style={{
-          width: chart_width,
-          height: "31vh",
+          // width: "23vw",
+          height: "31.5vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
-          marginRight: "10px",
+          marginRight: "15px",
           marginLeft: "15px",
         }}
       ></div>
@@ -776,15 +617,22 @@ const UtilityChart = () => {
       <div
         id={chartID_line}
         style={{
-          // width: chart_width,
-          height: "31vh",
+          // width: chard_width,
+          height: "31.5vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
-          marginRight: "10px",
+          marginRight: "15px",
           marginLeft: "15px",
         }}
       ></div>
-    </div>
+    </>
+
+    //     <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
+    //   {thousands_separators(progress[1])} %{" "}
+    //   <div className="totalLotsNumber2">
+    //     ({thousands_separators(progress[0])})
+    //   </div>
+    // </b>
   );
 };
 

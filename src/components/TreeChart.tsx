@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, use } from "react";
 import { treeCompensationLayer, treeCuttingLayer } from "../layers";
-import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
-import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -14,6 +12,7 @@ import {
   thousands_separators,
   generateTreeCompensationData,
   dateUpdate,
+  polygonViewQueryFeatureHighlight,
 } from "../Query";
 import "../App.css";
 import {
@@ -22,8 +21,6 @@ import {
   updatedDateCategoryNames,
   valueLabelColor,
 } from "../StatusUniqueValues";
-import "@esri/calcite-components/dist/components/calcite-label";
-import { CalciteLabel } from "@esri/calcite-components-react";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 
@@ -129,7 +126,7 @@ const TreeChart = () => {
     const chart = root.container.children.push(
       am5percent.PieChart.new(root, {
         layout: root.verticalLayout,
-      })
+      }),
     );
 
     // Add image in the middle
@@ -158,7 +155,7 @@ const TreeChart = () => {
         radius: am5.percent(45), // outer radius
         innerRadius: am5.percent(28),
         scale: 2,
-      })
+      }),
     );
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
@@ -173,7 +170,7 @@ const TreeChart = () => {
         populateText: true,
         oversizedBehavior: "fit",
         textAlign: "center",
-      })
+      }),
     );
 
     pieSeries.onPrivate("width", (width: any) => {
@@ -217,66 +214,15 @@ const TreeChart = () => {
       const selected: any = ev.target.dataItem?.dataContext;
       const categorySelected: string = selected.category;
       const find = statusTreeCuttingChart.find(
-        (emp: any) => emp.category === categorySelected
+        (emp: any) => emp.category === categorySelected,
       );
       const statusSelect = find?.value;
-
-      let highlightSelect: any;
-      const query = treeCuttingLayer.createQuery();
-
-      arcgisScene?.whenLayerView(treeCuttingLayer).then((layerView: any) => {
-        //chartLayerView = layerView;
-
-        treeCuttingLayer.queryFeatures(query).then((results: any) => {
-          const RESULT_LENGTH = results.features;
-          const ROW_N = RESULT_LENGTH.length;
-
-          const objID = [];
-          for (let i = 0; i < ROW_N; i++) {
-            const obj = results.features[i].attributes.OBJECTID;
-            objID.push(obj);
-          }
-
-          const queryExt = new Query({
-            objectIds: objID,
-          });
-
-          treeCuttingLayer.queryExtent(queryExt).then((result: any) => {
-            if (result.extent) {
-              arcgisScene?.view.goTo(result.extent);
-            }
-          });
-
-          if (highlightSelect) {
-            highlightSelect.remove();
-          }
-          highlightSelect = layerView.highlight(objID);
-
-          arcgisScene?.view.on("click", function () {
-            layerView.filter = new FeatureFilter({
-              where: undefined,
-            });
-            highlightSelect.remove();
-          });
-        }); // End of queryFeatures
-
-        layerView.filter = new FeatureFilter({
-          where: "Status = " + statusSelect,
-        });
-
-        // For initial state, we need to add this
-        arcgisScene?.view.on("click", () => {
-          layerView.filter = new FeatureFilter({
-            where: undefined,
-          });
-          if (!highlightSelect || highlightSelect === undefined) {
-            highlightSelect.remove();
-          }
-          // highlightSelect !== undefined
-          //   ? highlightSelect.remove()
-          //   : console.log("");
-        });
-      }); // End of view.whenLayerView
+      const qExpression = `CP = '${contractpackages}' AND Status = ${statusSelect} `;
+      polygonViewQueryFeatureHighlight({
+        polygonLayer: treeCuttingLayer,
+        qExpression: qExpression,
+        view: arcgisScene?.view,
+      });
     });
 
     pieSeries.data.setAll(treeCuttingData);
@@ -287,7 +233,7 @@ const TreeChart = () => {
       am5.Legend.new(root, {
         centerX: am5.percent(50),
         x: am5.percent(50),
-      })
+      }),
     );
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
@@ -311,7 +257,7 @@ const TreeChart = () => {
       const boxWidth = legendBoxWidth; //props.style.width;
       const availableSpace = Math.max(
         width - chart.height() - boxWidth,
-        boxWidth
+        boxWidth,
       );
       //const availableSpace = (boxWidth - valueLabelsWidth) * 0.7
       legend.labels.template.setAll({
@@ -376,7 +322,7 @@ const TreeChart = () => {
     const chart = root.container.children.push(
       am5percent.PieChart.new(root, {
         layout: root.verticalLayout,
-      })
+      }),
     );
     chartRef_compen.current = chart;
 
@@ -391,7 +337,7 @@ const TreeChart = () => {
         radius: am5.percent(45), // outer radius
         innerRadius: am5.percent(28),
         scale: 1.8,
-      })
+      }),
     );
     pieSeriesRef_compen.current = pieSeries;
     chart.series.push(pieSeries);
@@ -406,7 +352,7 @@ const TreeChart = () => {
         populateText: true,
         oversizedBehavior: "fit",
         textAlign: "center",
-      })
+      }),
     );
 
     pieSeries.onPrivate("width", (width: any) => {
@@ -450,65 +396,16 @@ const TreeChart = () => {
       const selected: any = ev.target.dataItem?.dataContext;
       const categorySelected: string = selected.category;
       const find = statusTreeCompensationChart.find(
-        (emp: any) => emp.category === categorySelected
+        (emp: any) => emp.category === categorySelected,
       );
       const statusSelect = find?.value;
+      const qExpression = `CP = '${contractpackages}' AND Compensation = ${statusSelect} `;
 
-      let highlightSelect: any;
-      const query = treeCompensationLayer.createQuery();
-
-      arcgisScene
-        ?.whenLayerView(treeCompensationLayer)
-        .then((layerView: any) => {
-          //chartLayerView = layerView;
-
-          treeCompensationLayer.queryFeatures(query).then((results: any) => {
-            const RESULT_LENGTH = results.features;
-            const ROW_N = RESULT_LENGTH.length;
-
-            const objID = [];
-            for (let i = 0; i < ROW_N; i++) {
-              const obj = results.features[i].attributes.OBJECTID;
-              objID.push(obj);
-            }
-
-            const queryExt = new Query({
-              objectIds: objID,
-            });
-
-            treeCompensationLayer.queryExtent(queryExt).then((result: any) => {
-              if (result.extent) {
-                arcgisScene?.view.goTo(result.extent);
-              }
-            });
-
-            if (highlightSelect) {
-              highlightSelect.remove();
-            }
-            highlightSelect = layerView.highlight(objID);
-
-            arcgisScene?.view.on("click", function () {
-              layerView.filter = new FeatureFilter({
-                where: undefined,
-              });
-              highlightSelect.remove();
-            });
-          }); // End of queryFeatures
-
-          layerView.filter = new FeatureFilter({
-            where: "Compensation = " + statusSelect,
-          });
-
-          // For initial state, we need to add this
-          arcgisScene?.view.on("click", () => {
-            layerView.filter = new FeatureFilter({
-              where: undefined,
-            });
-            if (!highlightSelect || highlightSelect === undefined) {
-              highlightSelect.remove();
-            }
-          });
-        }); // End of view.whenLayerView
+      polygonViewQueryFeatureHighlight({
+        polygonLayer: treeCompensationLayer,
+        qExpression: qExpression,
+        view: arcgisScene?.view,
+      });
     });
 
     pieSeries.data.setAll(treeCompensationData);
@@ -519,7 +416,7 @@ const TreeChart = () => {
       am5.Legend.new(root, {
         centerX: am5.percent(50),
         x: am5.percent(50),
-      })
+      }),
     );
     legendRef_compen.current = legend;
     legend.data.setAll(pieSeries.dataItems);
@@ -545,7 +442,7 @@ const TreeChart = () => {
       const boxWidth = legendBoxWidth; //props.style.width;
       const availableSpace = Math.max(
         width - chart.height() - boxWidth,
-        boxWidth
+        boxWidth,
       );
       //const availableSpace = (boxWidth - valueLabelsWidth) * 0.7
       legend.labels.template.setAll({
@@ -591,7 +488,7 @@ const TreeChart = () => {
   useEffect(() => {
     pieSeriesRef_compen.current?.data.setAll(treeCompensationData);
     legendRef_compen.current?.data.setAll(
-      pieSeriesRef_compen.current.dataItems
+      pieSeriesRef_compen.current.dataItems,
     );
   });
 
@@ -599,37 +496,45 @@ const TreeChart = () => {
     <>
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          marginLeft: "13px",
-          marginTop: "10px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        TOTAL TREES
-      </div>
-      <CalciteLabel layout="inline">
-        <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-          <div
+        <img
+          src="https://EijiGorilla.github.io/Symbols/Tree_Logo.svg"
+          alt="Land Logo"
+          height={"14%"}
+          width={"14%"}
+          style={{ paddingTop: "10px", paddingLeft: "15px" }}
+        />
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            TOTAL TREES
+          </dt>
+          <dd
             style={{
               color: valueLabelColor,
-              fontSize: "2rem",
+              fontSize: "1.9rem",
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
-              marginLeft: "15px",
+              margin: "auto",
             }}
           >
             {thousands_separators(treesNumber[0])}
-          </div>
-          <img
-            src="https://EijiGorilla.github.io/Symbols/Tree_Logo.svg"
-            alt="Land Logo"
-            height={"55px"}
-            width={"55px"}
-            style={{ marginLeft: "260px", display: "flex", marginTop: "-50px" }}
-          />
-        </b>
-      </CalciteLabel>
+          </dd>
+        </dl>
+      </div>
 
       <div
         style={{

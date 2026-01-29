@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, memo, use } from "react";
 import { structureLayer } from "../layers";
-import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
-import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -10,6 +8,7 @@ import {
   dateUpdate,
   generateStrucNumber,
   generateStructureData,
+  polygonViewQueryFeatureHighlight,
   thousands_separators,
 } from "../Query";
 import {
@@ -19,8 +18,6 @@ import {
   updatedDateCategoryNames,
   valueLabelColor,
 } from "../StatusUniqueValues";
-import "@esri/calcite-components/dist/components/calcite-label";
-import { CalciteLabel } from "@esri/calcite-components-react";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 
@@ -111,7 +108,7 @@ const StructureChart = memo(() => {
     const chart = root.container.children.push(
       am5percent.PieChart.new(root, {
         layout: root.verticalLayout,
-      })
+      }),
     );
     chartRef.current = chart;
 
@@ -126,8 +123,8 @@ const StructureChart = memo(() => {
         legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
         radius: am5.percent(45), // outer radius
         innerRadius: am5.percent(28),
-        scale: 2,
-      })
+        scale: 2.2,
+      }),
     );
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
@@ -142,7 +139,7 @@ const StructureChart = memo(() => {
         populateText: true,
         oversizedBehavior: "fit",
         textAlign: "center",
-      })
+      }),
     );
 
     pieSeries.onPrivate("width", (width: any) => {
@@ -186,53 +183,16 @@ const StructureChart = memo(() => {
       const selected: any = ev.target.dataItem?.dataContext;
       const categorySelect: string = selected.category;
       const find = statusStructureQuery.find(
-        (emp: any) => emp.category === categorySelect
+        (emp: any) => emp.category === categorySelect,
       );
       const statusSelect = find?.value;
+      const qExpression = `CP = '${contractpackages}' AND StatusStruc = ${statusSelect} `;
 
-      let highlightSelect: any;
-      const query = structureLayer.createQuery();
-
-      arcgisScene?.whenLayerView(structureLayer).then((layerView: any) => {
-        //chartLayerView = layerView;
-
-        structureLayer.queryFeatures(query).then(function (results) {
-          const RESULT_LENGTH = results.features;
-          const ROW_N = RESULT_LENGTH.length;
-
-          const objID = [];
-          for (let i = 0; i < ROW_N; i++) {
-            const obj = results.features[i].attributes.OBJECTID;
-            objID.push(obj);
-          }
-
-          const queryExt = new Query({
-            objectIds: objID,
-          });
-
-          structureLayer.queryExtent(queryExt).then(function (result) {
-            if (result.extent) {
-              arcgisScene?.view.goTo(result.extent);
-            }
-          });
-
-          if (highlightSelect) {
-            highlightSelect.remove();
-          }
-          highlightSelect = layerView.highlight(objID);
-
-          arcgisScene?.view.on("click", function () {
-            layerView.filter = new FeatureFilter({
-              where: undefined,
-            });
-            highlightSelect.remove();
-          });
-        }); // End of queryFeatures
-
-        layerView.filter = new FeatureFilter({
-          where: "StatusStruc = " + statusSelect,
-        });
-      }); // End of view.whenLayerView
+      polygonViewQueryFeatureHighlight({
+        polygonLayer: structureLayer,
+        qExpression: qExpression,
+        view: arcgisScene?.view,
+      });
     });
 
     pieSeries.data.setAll(structureData);
@@ -243,7 +203,7 @@ const StructureChart = memo(() => {
       am5.Legend.new(root, {
         centerX: am5.percent(50),
         x: am5.percent(50),
-      })
+      }),
     );
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
@@ -269,7 +229,7 @@ const StructureChart = memo(() => {
       const boxWidth = 230; //props.style.width;
       const availableSpace = Math.max(
         width - chart.height() - boxWidth,
-        boxWidth
+        boxWidth,
       );
       //const availableSpace = (boxWidth - valueLabelsWidth) * 0.7
       legend.labels.template.setAll({
@@ -323,37 +283,45 @@ const StructureChart = memo(() => {
     <>
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          marginLeft: "13px",
-          marginTop: "10px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        TOTAL STRUCTURES
-      </div>
-      <CalciteLabel layout="inline">
-        <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-          <div
+        <img
+          src="https://EijiGorilla.github.io/Symbols/House_Logo.svg"
+          alt="Land Logo"
+          height={"15%"}
+          width={"15%"}
+          style={{ paddingTop: "5px", paddingLeft: "15px" }}
+        />
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            TOTAL STRUCTURES
+          </dt>
+          <dd
             style={{
               color: valueLabelColor,
-              fontSize: "2rem",
+              fontSize: "1.9rem",
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
-              marginLeft: "15px",
+              margin: "auto",
             }}
           >
             {thousands_separators(structureNumber[2])}
-          </div>
-          <img
-            src="https://EijiGorilla.github.io/Symbols/House_Logo.svg"
-            alt="Land Logo"
-            height={"50px"}
-            width={"50px"}
-            style={{ marginLeft: "260px", display: "flex", marginTop: "-50px" }}
-          />
-        </b>
-      </CalciteLabel>
+          </dd>
+        </dl>
+      </div>
 
       <div
         style={{
@@ -370,7 +338,7 @@ const StructureChart = memo(() => {
       <div
         id={chartID}
         style={{
-          height: "50vh",
+          height: "53vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginTop: "6%",
@@ -380,33 +348,54 @@ const StructureChart = memo(() => {
 
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          // marginBottom: '13px',
-          marginLeft: "13px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        PERMIT-TO-ENTER
-      </div>
-      <CalciteLabel layout="inline">
-        {structureNumber[1] === 0 ? (
-          <b className="permitToEnterNumber" style={{ color: valueLabelColor }}>
-            {structureNumber[0]}% (0)
-          </b>
-        ) : (
-          <b className="permitToEnterNumber" style={{ color: valueLabelColor }}>
-            {structureNumber[0]}% ({thousands_separators(structureNumber[1])})
-          </b>
-        )}
-
         <img
           src="https://EijiGorilla.github.io/Symbols/Permit-To-Enter.png"
-          alt="Structure Logo"
-          height={"50px"}
-          width={"50px"}
-          style={{ margin: "auto", marginRight: "40px" }}
+          alt="Land Logo"
+          height={"13%"}
+          width={"13%"}
+          style={{ paddingTop: "5px", paddingLeft: "15px" }}
         />
-      </CalciteLabel>
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            PERMIT-TO-ENTER
+          </dt>
+          <dd
+            style={{
+              color: valueLabelColor,
+              fontSize: "1.9rem",
+              fontWeight: "bold",
+              fontFamily: "calibri",
+              lineHeight: "1.2",
+              margin: "auto",
+            }}
+          >
+            {structureNumber[1] === 0 ? (
+              <span style={{ color: valueLabelColor }}>
+                {structureNumber[0]}% (0)
+              </span>
+            ) : (
+              <span style={{ color: valueLabelColor }}>
+                {structureNumber[0]}% (
+                {thousands_separators(structureNumber[1])})
+              </span>
+            )}
+          </dd>
+        </dl>
+      </div>
     </>
   );
 }); // End of lotChartgs

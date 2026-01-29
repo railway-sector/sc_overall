@@ -1,7 +1,5 @@
 import { useRef, useState, useEffect, memo, use } from "react";
 import { nloLayer } from "../layers";
-import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
-import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -10,11 +8,10 @@ import {
   dateUpdate,
   generateNloData,
   generateNloNumber,
+  polygonViewQueryFeatureHighlight,
   statusNloChart,
   thousands_separators,
 } from "../Query";
-import "@esri/calcite-components/dist/components/calcite-label";
-import { CalciteLabel } from "@esri/calcite-components-react";
 import {
   cutoff_days,
   nloStatusField,
@@ -112,7 +109,7 @@ const NloChart = memo(() => {
     const chart = root.container.children.push(
       am5percent.PieChart.new(root, {
         layout: root.verticalLayout,
-      })
+      }),
     );
     chartRef.current = chart;
 
@@ -128,7 +125,7 @@ const NloChart = memo(() => {
         radius: am5.percent(45), // outer radius
         innerRadius: am5.percent(28),
         scale: 2,
-      })
+      }),
     );
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
@@ -143,7 +140,7 @@ const NloChart = memo(() => {
         populateText: true,
         oversizedBehavior: "fit",
         textAlign: "center",
-      })
+      }),
     );
 
     pieSeries.onPrivate("width", (width: any) => {
@@ -187,54 +184,16 @@ const NloChart = memo(() => {
       const selected: any = ev.target.dataItem?.dataContext;
       const categorySelect: string = selected.category;
       const find = statusNloChart.find(
-        (emp: any) => emp.category === categorySelect
+        (emp: any) => emp.category === categorySelect,
       );
       const typeSelect = find?.value;
+      const qExpression = `CP = '${contractpackages}' AND ${nloStatusField} = ${typeSelect} `;
 
-      let highlightSelect: any;
-
-      const query = nloLayer.createQuery();
-
-      arcgisScene?.whenLayerView(nloLayer).then((layerView: any) => {
-        //chartLayerView = layerView;
-
-        nloLayer.queryFeatures(query).then(function (results) {
-          const RESULT_LENGTH = results.features;
-          const ROW_N = RESULT_LENGTH.length;
-
-          const objID = [];
-          for (let i = 0; i < ROW_N; i++) {
-            const obj = results.features[i].attributes.OBJECTID;
-            objID.push(obj);
-          }
-
-          const queryExt = new Query({
-            objectIds: objID,
-          });
-
-          nloLayer.queryExtent(queryExt).then(function (result) {
-            if (result.extent) {
-              arcgisScene?.view.goTo(result.extent);
-            }
-          });
-
-          if (highlightSelect) {
-            highlightSelect.remove();
-          }
-          highlightSelect = layerView.highlight(objID);
-
-          arcgisScene?.view.on("click", function () {
-            layerView.filter = new FeatureFilter({
-              where: undefined,
-            });
-            highlightSelect.remove();
-          });
-        }); // End of queryFeatures
-
-        layerView.filter = new FeatureFilter({
-          where: `${nloStatusField} = ` + typeSelect,
-        });
-      }); // End of view.whenLayerView
+      polygonViewQueryFeatureHighlight({
+        polygonLayer: nloLayer,
+        qExpression: qExpression,
+        view: arcgisScene?.view,
+      });
     });
 
     pieSeries.data.setAll(nloData);
@@ -246,7 +205,7 @@ const NloChart = memo(() => {
         centerX: am5.percent(50),
         x: am5.percent(50),
         scale: 1,
-      })
+      }),
     );
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
@@ -272,7 +231,7 @@ const NloChart = memo(() => {
       const boxWidth = 220; //props.style.width;
       const availableSpace = Math.max(
         width - chart.height() - boxWidth,
-        boxWidth
+        boxWidth,
       );
       //const availableSpace = (boxWidth - valueLabelsWidth) * 0.7
       legend.labels.template.setAll({
@@ -326,37 +285,45 @@ const NloChart = memo(() => {
     <>
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          marginLeft: "13px",
-          marginTop: "10px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        Total Households
-      </div>
-      <CalciteLabel layout="inline">
-        <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-          <div
+        <img
+          src="https://EijiGorilla.github.io/Symbols/NLO_Logo.svg"
+          alt="Land Logo"
+          height={"14%"}
+          width={"14%"}
+          style={{ paddingTop: "5px", paddingLeft: "15px" }}
+        />
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            TOTAL HOUSEHOLDS
+          </dt>
+          <dd
             style={{
               color: valueLabelColor,
-              fontSize: "2rem",
+              fontSize: "1.9rem",
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
-              marginLeft: "15px",
+              margin: "auto",
             }}
           >
             {thousands_separators(nloNumber)}
-          </div>
-          <img
-            src="https://EijiGorilla.github.io/Symbols/NLO_Logo.svg"
-            alt="Land Logo"
-            height={"50px"}
-            width={"50px"}
-            style={{ marginLeft: "260px", display: "flex", marginTop: "-50px" }}
-          />
-        </b>
-      </CalciteLabel>
+          </dd>
+        </dl>
+      </div>
 
       <div
         style={{

@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState, use } from "react";
 import { handedOverLotLayer, lotLayer } from "../layers";
-import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
-import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
-
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
@@ -13,6 +10,7 @@ import {
   generateHandedOverArea,
   generateLotData,
   generateLotNumber,
+  polygonViewQueryFeatureHighlight,
   statusLotChart,
   thousands_separators,
   zoomToLayer,
@@ -20,14 +18,16 @@ import {
 import "../App.css";
 import "@esri/calcite-components/dist/components/calcite-label";
 import "@esri/calcite-components/dist/components/calcite-checkbox";
-import { CalciteLabel, CalciteCheckbox } from "@esri/calcite-components-react";
 import {
   cpField,
   cutoff_days,
+  lotStatusField,
   primaryLabelColor,
   updatedDateCategoryNames,
   valueLabelColor,
 } from "../StatusUniqueValues";
+import "@esri/calcite-components/dist/components/calcite-checkbox";
+import { CalciteCheckbox } from "@esri/calcite-components-react";
 
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
@@ -144,7 +144,7 @@ const LotChart = () => {
     const chart = root.container.children.push(
       am5percent.PieChart.new(root, {
         layout: root.verticalLayout,
-      })
+      }),
     );
     chartRef.current = chart;
 
@@ -159,8 +159,8 @@ const LotChart = () => {
         legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
         radius: am5.percent(45), // outer radius
         innerRadius: am5.percent(28),
-        scale: 2,
-      })
+        scale: 2.2,
+      }),
     );
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
@@ -175,7 +175,7 @@ const LotChart = () => {
         populateText: true,
         oversizedBehavior: "fit",
         textAlign: "center",
-      })
+      }),
     );
 
     pieSeries.onPrivate("width", (width: any) => {
@@ -219,54 +219,16 @@ const LotChart = () => {
       const selected: any = ev.target.dataItem?.dataContext;
       const categorySelected: string = selected.category;
       const find = statusLotChart.find(
-        (emp: any) => emp.category === categorySelected
+        (emp: any) => emp.category === categorySelected,
       );
       const statusSelect = find?.value;
+      const qExpression = `CP = '${contractpackages}' AND ${lotStatusField} = ${statusSelect} `;
 
-      let highlightSelect: any;
-
-      const query = lotLayer.createQuery();
-
-      arcgisScene?.whenLayerView(lotLayer).then((layerView: any) => {
-        //chartLayerView = layerView;
-
-        lotLayer.queryFeatures(query).then((results: any) => {
-          const RESULT_LENGTH = results.features;
-          const ROW_N = RESULT_LENGTH.length;
-
-          const objID = [];
-          for (let i = 0; i < ROW_N; i++) {
-            const obj = results.features[i].attributes.OBJECTID;
-            objID.push(obj);
-          }
-
-          const queryExt = new Query({
-            objectIds: objID,
-          });
-
-          lotLayer.queryExtent(queryExt).then((result: any) => {
-            if (result.extent) {
-              arcgisScene?.view.goTo(result.extent);
-            }
-          });
-
-          if (highlightSelect) {
-            highlightSelect.remove();
-          }
-          highlightSelect = layerView.highlight(objID);
-
-          arcgisScene?.view.on("click", function () {
-            layerView.filter = new FeatureFilter({
-              where: undefined,
-            });
-            highlightSelect.remove();
-          });
-        }); // End of queryFeatures
-
-        layerView.filter = new FeatureFilter({
-          where: "StatusLA = " + statusSelect,
-        });
-      }); // End of view.whenLayerView
+      polygonViewQueryFeatureHighlight({
+        polygonLayer: lotLayer,
+        qExpression: qExpression,
+        view: arcgisScene?.view,
+      });
     });
 
     pieSeries.data.setAll(lotData);
@@ -278,7 +240,7 @@ const LotChart = () => {
         centerX: am5.percent(50),
         x: am5.percent(50),
         scale: 1,
-      })
+      }),
     );
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
@@ -304,7 +266,7 @@ const LotChart = () => {
       const boxWidth = 220; //props.style.width;
       const availableSpace = Math.max(
         width - chart.height() - boxWidth,
-        boxWidth
+        boxWidth,
       );
       //const availableSpace = (boxWidth - valueLabelsWidth) * 0.7
       legend.labels.template.setAll({
@@ -356,38 +318,45 @@ const LotChart = () => {
     <>
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          marginLeft: "13px",
-          marginTop: "10px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        TOTAL LOTS
-      </div>
-
-      <CalciteLabel layout="inline">
-        <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-          <div
+        <img
+          src="https://EijiGorilla.github.io/Symbols/Land_logo.png"
+          alt="Land Logo"
+          height={"12%"}
+          width={"12%"}
+          style={{ paddingTop: "10px", paddingLeft: "15px" }}
+        />
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            TOTAL LOTS
+          </dt>
+          <dd
             style={{
               color: valueLabelColor,
-              fontSize: "2rem",
+              fontSize: "1.9rem",
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
-              marginLeft: "15px",
+              margin: "auto",
             }}
           >
             {thousands_separators(lotNumber[0])}
-          </div>
-          <img
-            src="https://EijiGorilla.github.io/Symbols/Land_logo.png"
-            alt="Land Logo"
-            height={"50px"}
-            width={"50px"}
-            style={{ marginLeft: "260px", display: "flex", marginTop: "-50px" }}
-          />
-        </b>
-      </CalciteLabel>
+          </dd>
+        </dl>
+      </div>
 
       {/* As of date  */}
       <div
@@ -406,11 +375,11 @@ const LotChart = () => {
         id={chartID}
         style={{
           // width: chart_width,
-          height: "50vh",
+          height: "55vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginTop: "8%",
-          marginBottom: "10%",
+          marginBottom: "5%",
         }}
       ></div>
 
@@ -421,7 +390,7 @@ const LotChart = () => {
           marginLeft: "15px",
           marginRight: "15px",
           justifyContent: "space-between",
-          marginBottom: "20px",
+          marginBottom: "10px",
         }}
       >
         <div

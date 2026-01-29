@@ -1,21 +1,16 @@
 import { useEffect, useRef, useState, use } from "react";
 import { viaductLayer } from "../layers";
-import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
-  chart_width,
   construction_status,
   cutoff_days,
   primaryLabelColor,
   updatedDateCategoryNames,
   valueLabelColor,
 } from "../StatusUniqueValues";
-import "@esri/calcite-components/dist/components/calcite-label";
-import { CalciteLabel } from "@esri/calcite-components-react";
-
 import "../App.css";
 import {
   generateViaductChartData,
@@ -23,6 +18,7 @@ import {
   thousands_separators,
   viatypes,
   dateUpdate,
+  polygonViewQueryFeatureHighlight,
 } from "../Query";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
@@ -128,7 +124,7 @@ const ViaductChart = () => {
         paddingBottom: paddingBottom,
         scale: 1,
         height: am5.percent(100),
-      })
+      }),
     );
     chartRef.current = chart;
 
@@ -153,7 +149,7 @@ const ViaductChart = () => {
           });
         },
         tooltip: am5.Tooltip.new(root, {}),
-      })
+      }),
     );
 
     yRenderer.labels.template.setAll({
@@ -186,7 +182,7 @@ const ViaductChart = () => {
           strokeWidth: 1,
           stroke: am5.color("#ffffff"),
         }),
-      })
+      }),
     );
 
     xAxis.get("renderer").labels.template.setAll({
@@ -205,7 +201,7 @@ const ViaductChart = () => {
         marginTop: 20,
         scale: 0.8,
         layout: root.horizontalLayout,
-      })
+      }),
     );
     legendRef.current = legend;
 
@@ -237,7 +233,7 @@ const ViaductChart = () => {
                 : am5.color(chartSeriesFillColorDelay)
               : am5.color(chartSeriesFillColorComp),
           stroke: am5.color(chartBorderLineColor),
-        })
+        }),
       );
 
       series.columns.template.setAll({
@@ -247,8 +243,8 @@ const ViaductChart = () => {
               ? 0 // if first condition is false and second condition is true,
               : 1 // if first condition is true
             : fieldName === "delay" // third condition
-            ? 0.5 // if first and second conditions are false but third condition is true
-            : 0, // else
+              ? 0.5 // if first and second conditions are false but third condition is true
+              : 0, // else
         tooltipText: "{name}: {valueX}", // "{categoryY}: {valueX}",
         tooltipY: am5.percent(90),
         strokeWidth: chartBorderLineWidth,
@@ -279,7 +275,7 @@ const ViaductChart = () => {
         const selected: any = ev.target.dataItem?.dataContext;
         const categorySelect: string = selected.category;
         const find = viatypes.find(
-          (emp: any) => emp.category === categorySelect
+          (emp: any) => emp.category === categorySelect,
         );
         const typeSelect = find?.value;
         const selectedStatus: number | null =
@@ -288,52 +284,15 @@ const ViaductChart = () => {
               ? 1
               : 4
             : fieldName === "delay"
-            ? 3
-            : 1;
+              ? 3
+              : 1;
 
-        const expression =
-          "CP = '" +
-          contractpackages +
-          "'" +
-          " AND " +
-          "Type = " +
-          typeSelect +
-          " AND " +
-          "Status = " +
-          selectedStatus;
+        const qExpression = `CP = '${contractpackages}' AND Type = ${typeSelect} AND Status = ${selectedStatus}`;
 
-        // Define Query
-        const query = viaductLayer.createQuery();
-        // query.where = '1=1';
-
-        // layerView filter and highlight
-        let highlightSelect: any;
-        arcgisScene?.whenLayerView(viaductLayer).then((layerView: any) => {
-          viaductLayer.queryFeatures(query).then((results: any) => {
-            const lengths = results.features;
-            const rows = lengths.length;
-
-            const objID = [];
-            for (let i = 0; i < rows; i++) {
-              const obj = results.features[i].attributes.OBJECTID;
-              objID.push(obj);
-            }
-
-            if (highlightSelect) {
-              highlightSelect.remove();
-            }
-            highlightSelect = layerView.highlight(objID);
-
-            arcgisScene?.view.on("click", () => {
-              layerView.filter = new FeatureFilter({
-                where: undefined,
-              });
-              highlightSelect.remove();
-            });
-          });
-          layerView.filter = new FeatureFilter({
-            where: expression,
-          });
+        polygonViewQueryFeatureHighlight({
+          polygonLayer: viaductLayer,
+          qExpression: qExpression,
+          view: arcgisScene?.view,
         });
       });
       legend.data.push(series);
@@ -349,45 +308,48 @@ const ViaductChart = () => {
   });
 
   return (
-    <div style={{ width: chart_width }}>
+    <div>
       <div
         style={{
-          color: primaryLabelColor,
-          fontSize: "1.2rem",
-          marginLeft: "13px",
-          marginTop: "10px",
+          display: "flex",
+          marginTop: "3px",
+          marginLeft: "15px",
+          marginRight: "15px",
+          justifyContent: "space-between",
+          marginBottom: "10px",
         }}
       >
-        TOTAL PROGRESS
-      </div>
-      <CalciteLabel layout="inline">
-        <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-          <div
+        <img
+          src="https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_All_Logo.svg"
+          alt="Land Logo"
+          height={"12%"}
+          width={"12%"}
+          style={{ paddingTop: "10px", paddingLeft: "15px" }}
+        />
+        <dl style={{ alignItems: "center" }}>
+          <dt
+            style={{
+              color: primaryLabelColor,
+              fontSize: "1.2rem",
+              marginRight: "35px",
+            }}
+          >
+            TOTAL PROGRESS
+          </dt>
+          <dd
             style={{
               color: valueLabelColor,
-              fontSize: "2rem",
+              fontSize: "1.9rem",
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
-              marginLeft: "15px",
+              margin: "auto",
             }}
           >
-            <b className="totalLotsNumber" style={{ color: valueLabelColor }}>
-              {thousands_separators(progress[2])} %{" "}
-              <div className="totalLotsNumber2">
-                ({thousands_separators(progress[0])})
-              </div>
-            </b>
-          </div>
-          <img
-            src="https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_All_Logo.svg"
-            alt="Land Logo"
-            height={"50px"}
-            width={"50px"}
-            style={{ marginLeft: "260px", display: "flex", marginTop: "-70px" }}
-          />
-        </b>
-      </CalciteLabel>
+            {thousands_separators(progress[0])}
+          </dd>
+        </dl>
+      </div>
 
       {/* As of date  */}
       <div
