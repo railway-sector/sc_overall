@@ -1,0 +1,1 @@
+import{bi as i,d8 as e,d1 as n}from"./index-Br3x8Ng2.js";function u(r){return i.isCollection(r)?r.toArray():Array.isArray(r)?r:t(r)||e(r)||a(r)?[r]:s}function t(r){return typeof r=="number"||typeof r=="string"}const s=[],o=n();function a(r){return r.declaredClass==="esri.views.3d.layers.i3s.PointCloudGraphic"}export{u as e,t as i,o as s};
