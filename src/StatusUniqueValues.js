@@ -44,7 +44,7 @@ export const lotStatusLabel = [
   "For Notice of Taking",
   "With PTE",
   "For Expropriation",
-  "Harmonized/For Harmonization",
+  "Harmonized/Optimized",
 ];
 
 export const lotStatusColor = [
@@ -133,7 +133,7 @@ export const statusStructureQuery = statusStructureLabel.map(
       colorLayer: structureStatusColorRgb[index],
       color: structureStatusColorHex[index],
     });
-  }
+  },
 );
 
 // Permit to Enter for structure
